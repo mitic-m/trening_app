@@ -5,7 +5,7 @@ Alat za trenera za vođenje klijenata; ujedno projekat za učenje backend-a.
 - V2: klijent (pregled planova i istorije, samo čitanje)
 
 ## V1, mora da ima
-- Klijenti: profil (dani kad ne može da trenira, povrede, tip treninga koji traži)
+- Klijenti: profil (za sada samo ime, prezime i datum rođenja; ostalo kasnije)
 - Vežbe: baza vežbi
 - Plan treninga: dani -> vežbe -> serije/ponavljanja
 - Šta se radi danas: prikaz treninga za izabrani dan
