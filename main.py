@@ -72,3 +72,25 @@ def obrisi_vezbu(vezba_id: int, db: Session = Depends(get_db)):
     db.delete(vezba)
     db.commit()
     return {"poruka": "Vežba obrisana"}
+
+
+@app.post("/planovi", response_model=schemas.PlanOut)
+def dodaj_plan(podaci: schemas.PlanCreate, db: Session = Depends(get_db)):
+    klijent = db.get(models.Klijent, podaci.klijent_id)
+    if klijent is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+    plan = models.Plan(**podaci.model_dump())
+    db.add(plan)
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+@app.get("/planovi", response_model=list[schemas.PlanOut])
+def svi_planovi(db: Session = Depends(get_db)):
+    return db.query(models.Plan).all()
+
+
+@app.get("/klijenti/{klijent_id}/planovi", response_model=list[schemas.PlanOut])
+def planovi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
+    return db.query(models.Plan).filter(models.Plan.klijent_id == klijent_id).all()

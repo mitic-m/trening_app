@@ -1,5 +1,5 @@
 from datetime import date
-from sqlalchemy import String, Date
+from sqlalchemy import String, Date, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -20,4 +20,12 @@ class Vezba(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     naziv: Mapped[str] = mapped_column(String(100), unique=True)
     misicna_grupa: Mapped[str | None] = mapped_column(String(50), default=None)
+
+
+class Plan(Base):
+    __tablename__ = "planovi"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    naziv: Mapped[str] = mapped_column(String(100))
+    klijent_id: Mapped[int] = mapped_column(ForeignKey("klijenti.id"))
 

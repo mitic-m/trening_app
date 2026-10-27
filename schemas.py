@@ -23,3 +23,14 @@ class VezbaOut(VezbaCreate):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class PlanCreate(BaseModel):
+    naziv: str
+    klijent_id: int
+
+
+class PlanOut(PlanCreate):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
