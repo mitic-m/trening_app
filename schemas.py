@@ -12,3 +12,14 @@ class KlijentOut(KlijentCreate):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class VezbaCreate(BaseModel):
+    naziv: str
+    misicna_grupa: str | None = None
+
+
+class VezbaOut(VezbaCreate):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)

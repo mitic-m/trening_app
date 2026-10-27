@@ -12,3 +12,12 @@ class Klijent(Base):
     ime: Mapped[str] = mapped_column(String(100))
     prezime: Mapped[str] = mapped_column(String(100))
     datum_rodjenja: Mapped[date] = mapped_column(Date)
+
+
+class Vezba(Base):
+    __tablename__ = "vezbe"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    naziv: Mapped[str] = mapped_column(String(100), unique=True)
+    misicna_grupa: Mapped[str | None] = mapped_column(String(50), default=None)
+

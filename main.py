@@ -45,3 +45,30 @@ def obrisi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
     db.delete(klijent)
     db.commit()
     return {"poruka": "Klijent obrisan"}
+
+
+@app.post("/vezbe", response_model=schemas.VezbaOut)
+def dodaj_vezbu(podaci: schemas.VezbaCreate, db: Session = Depends(get_db)):
+    postoji = db.query(models.Vezba).filter(models.Vezba.naziv == podaci.naziv).first()
+    if postoji:
+        raise HTTPException(status_code=400, detail="Vežba sa tim nazivom već postoji")
+    vezba = models.Vezba(**podaci.model_dump())
+    db.add(vezba)
+    db.commit()
+    db.refresh(vezba)
+    return vezba
+
+
+@app.get("/vezbe", response_model=list[schemas.VezbaOut])
+def sve_vezbe(db: Session = Depends(get_db)):
+    return db.query(models.Vezba).all()
+
+
+@app.delete("/vezbe/{vezba_id}")
+def obrisi_vezbu(vezba_id: int, db: Session = Depends(get_db)):
+    vezba = db.get(models.Vezba, vezba_id)
+    if vezba is None:
+        raise HTTPException(status_code=404, detail="Vežba ne postoji")
+    db.delete(vezba)
+    db.commit()
+    return {"poruka": "Vežba obrisana"}
