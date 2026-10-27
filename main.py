@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
 
 from database import Base, engine, SessionLocal
@@ -35,3 +35,13 @@ def dodaj_klijenta(podaci: schemas.KlijentCreate, db: Session = Depends(get_db))
 @app.get("/klijenti", response_model=list[schemas.KlijentOut])
 def svi_klijenti(db: Session = Depends(get_db)):
     return db.query(models.Klijent).all()
+
+
+@app.delete("/klijenti/{klijent_id}")
+def obrisi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
+    klijent = db.get(models.Klijent, klijent_id)
+    if klijent is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+    db.delete(klijent)
+    db.commit()
+    return {"poruka": "Klijent obrisan"}
