@@ -116,3 +116,21 @@ def dani_plana(plan_id: int, db: Session = Depends(get_db)):
         .order_by(models.DanPlana.redni_broj)
         .all()
     )
+
+
+@app.post("/dani/{dan_id}/vezbe", response_model=schemas.VezbaUDanuOut)
+def dodaj_vezbu_u_dan(dan_id: int, podaci: schemas.VezbaUDanuCreate, db: Session = Depends(get_db)):
+    if db.get(models.DanPlana, dan_id) is None:
+        raise HTTPException(status_code=404, detail="Dan ne postoji")
+    if db.get(models.Vezba, podaci.vezba_id) is None:
+        raise HTTPException(status_code=404, detail="Vežba ne postoji")
+    stavka = models.VezbaUDanu(dan_id=dan_id, **podaci.model_dump())
+    db.add(stavka)
+    db.commit()
+    db.refresh(stavka)
+    return stavka
+
+
+@app.get("/dani/{dan_id}/vezbe", response_model=list[schemas.VezbaUDanuOut])
+def vezbe_u_danu(dan_id: int, db: Session = Depends(get_db)):
+    return db.query(models.VezbaUDanu).filter(models.VezbaUDanu.dan_id == dan_id).all()

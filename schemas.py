@@ -46,3 +46,16 @@ class DanOut(DanCreate):
     plan_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class VezbaUDanuCreate(BaseModel):
+    vezba_id: int
+    serije: int
+    ponavljanja: int
+
+
+class VezbaUDanuOut(VezbaUDanuCreate):
+    id: int
+    dan_id: int
+
+    model_config = ConfigDict(from_attributes=True)

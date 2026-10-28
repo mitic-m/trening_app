@@ -38,3 +38,13 @@ class DanPlana(Base):
     naziv: Mapped[str] = mapped_column(String(100))
     redni_broj: Mapped[int]
 
+
+class VezbaUDanu(Base):
+    __tablename__ = "vezbe_u_danu"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    dan_id: Mapped[int] = mapped_column(ForeignKey("dani_plana.id"))
+    vezba_id: Mapped[int] = mapped_column(ForeignKey("vezbe.id"))
+    serije: Mapped[int]
+    ponavljanja: Mapped[int]
+
