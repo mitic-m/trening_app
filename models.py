@@ -29,3 +29,12 @@ class Plan(Base):
     naziv: Mapped[str] = mapped_column(String(100))
     klijent_id: Mapped[int] = mapped_column(ForeignKey("klijenti.id"))
 
+
+class DanPlana(Base):
+    __tablename__ = "dani_plana"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("planovi.id"))
+    naziv: Mapped[str] = mapped_column(String(100))
+    redni_broj: Mapped[int]
+

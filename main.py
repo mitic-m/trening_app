@@ -94,3 +94,25 @@ def svi_planovi(db: Session = Depends(get_db)):
 @app.get("/klijenti/{klijent_id}/planovi", response_model=list[schemas.PlanOut])
 def planovi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
     return db.query(models.Plan).filter(models.Plan.klijent_id == klijent_id).all()
+
+
+@app.post("/planovi/{plan_id}/dani", response_model=schemas.DanOut)
+def dodaj_dan(plan_id: int, podaci: schemas.DanCreate, db: Session = Depends(get_db)):
+    plan = db.get(models.Plan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan ne postoji")
+    dan = models.DanPlana(plan_id=plan_id, **podaci.model_dump())
+    db.add(dan)
+    db.commit()
+    db.refresh(dan)
+    return dan
+
+
+@app.get("/planovi/{plan_id}/dani", response_model=list[schemas.DanOut])
+def dani_plana(plan_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.DanPlana)
+        .filter(models.DanPlana.plan_id == plan_id)
+        .order_by(models.DanPlana.redni_broj)
+        .all()
+    )

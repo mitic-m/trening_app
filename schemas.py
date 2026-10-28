@@ -34,3 +34,15 @@ class PlanOut(PlanCreate):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DanCreate(BaseModel):
+    naziv: str
+    redni_broj: int
+
+
+class DanOut(DanCreate):
+    id: int
+    plan_id: int
+
+    model_config = ConfigDict(from_attributes=True)
