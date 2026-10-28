@@ -1,6 +1,6 @@
 from datetime import date
 from sqlalchemy import String, Date, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -29,6 +29,10 @@ class Plan(Base):
     naziv: Mapped[str] = mapped_column(String(100))
     klijent_id: Mapped[int] = mapped_column(ForeignKey("klijenti.id"))
 
+    dani: Mapped[list["DanPlana"]] = relationship(
+        back_populates="plan", order_by="DanPlana.redni_broj"
+    )
+
 
 class DanPlana(Base):
     __tablename__ = "dani_plana"
@@ -37,6 +41,9 @@ class DanPlana(Base):
     plan_id: Mapped[int] = mapped_column(ForeignKey("planovi.id"))
     naziv: Mapped[str] = mapped_column(String(100))
     redni_broj: Mapped[int]
+
+    plan: Mapped["Plan"] = relationship(back_populates="dani")
+    vezbe: Mapped[list["VezbaUDanu"]] = relationship(back_populates="dan")
 
 
 class VezbaUDanu(Base):
@@ -48,3 +55,5 @@ class VezbaUDanu(Base):
     serije: Mapped[int]
     ponavljanja: Mapped[int]
 
+    dan: Mapped["DanPlana"] = relationship(back_populates="vezbe")
+    vezba: Mapped["Vezba"] = relationship()

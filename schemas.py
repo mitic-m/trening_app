@@ -59,3 +59,30 @@ class VezbaUDanuOut(VezbaUDanuCreate):
     dan_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class VezbaUDanuDetalj(BaseModel):
+    id: int
+    serije: int
+    ponavljanja: int
+    vezba: VezbaOut
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DanDetalj(BaseModel):
+    id: int
+    naziv: str
+    redni_broj: int
+    vezbe: list[VezbaUDanuDetalj]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PlanDetalj(BaseModel):
+    id: int
+    naziv: str
+    klijent_id: int
+    dani: list[DanDetalj]
+
+    model_config = ConfigDict(from_attributes=True)

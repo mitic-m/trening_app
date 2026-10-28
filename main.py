@@ -134,3 +134,11 @@ def dodaj_vezbu_u_dan(dan_id: int, podaci: schemas.VezbaUDanuCreate, db: Session
 @app.get("/dani/{dan_id}/vezbe", response_model=list[schemas.VezbaUDanuOut])
 def vezbe_u_danu(dan_id: int, db: Session = Depends(get_db)):
     return db.query(models.VezbaUDanu).filter(models.VezbaUDanu.dan_id == dan_id).all()
+
+
+@app.get("/planovi/{plan_id}", response_model=schemas.PlanDetalj)
+def ceo_plan(plan_id: int, db: Session = Depends(get_db)):
+    plan = db.get(models.Plan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan ne postoji")
+    return plan
