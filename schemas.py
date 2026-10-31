@@ -1,5 +1,5 @@
 from datetime import date
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class KlijentCreate(BaseModel):
@@ -84,5 +84,34 @@ class PlanDetalj(BaseModel):
     naziv: str
     klijent_id: int
     dani: list[DanDetalj]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TreningCreate(BaseModel):
+    klijent_id: int
+    dan_id: int
+    datum: date
+    osecaj_pri_dolasku: int = Field(ge=1, le=5)
+    osecaj_tokom: int = Field(ge=1, le=5)
+    komentar: str | None = None
+
+
+class TreningOut(TreningCreate):
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SerijaCreate(BaseModel):
+    vezba_id: int
+    redni_broj: int
+    kilaza: float
+    ponavljanja: int
+
+
+class SerijaOut(SerijaCreate):
+    id: int
+    trening_id: int
 
     model_config = ConfigDict(from_attributes=True)

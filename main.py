@@ -142,3 +142,49 @@ def ceo_plan(plan_id: int, db: Session = Depends(get_db)):
     if plan is None:
         raise HTTPException(status_code=404, detail="Plan ne postoji")
     return plan
+
+
+@app.post("/treninzi", response_model=schemas.TreningOut)
+def dodaj_trening(podaci: schemas.TreningCreate, db: Session = Depends(get_db)):
+    if db.get(models.Klijent, podaci.klijent_id) is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+    if db.get(models.DanPlana, podaci.dan_id) is None:
+        raise HTTPException(status_code=404, detail="Dan ne postoji")
+    trening = models.Trening(**podaci.model_dump())
+    db.add(trening)
+    db.commit()
+    db.refresh(trening)
+    return trening
+
+
+@app.get("/klijenti/{klijent_id}/treninzi", response_model=list[schemas.TreningOut])
+def treninzi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.Trening)
+        .filter(models.Trening.klijent_id == klijent_id)
+        .order_by(models.Trening.datum.desc())
+        .all()
+    )
+
+
+@app.post("/treninzi/{trening_id}/serije", response_model=schemas.SerijaOut)
+def dodaj_seriju(trening_id: int, podaci: schemas.SerijaCreate, db: Session = Depends(get_db)):
+    if db.get(models.Trening, trening_id) is None:
+        raise HTTPException(status_code=404, detail="Trening ne postoji")
+    if db.get(models.Vezba, podaci.vezba_id) is None:
+        raise HTTPException(status_code=404, detail="Vežba ne postoji")
+    serija = models.SerijaTreninga(trening_id=trening_id, **podaci.model_dump())
+    db.add(serija)
+    db.commit()
+    db.refresh(serija)
+    return serija
+
+
+@app.get("/treninzi/{trening_id}/serije", response_model=list[schemas.SerijaOut])
+def serije_treninga(trening_id: int, db: Session = Depends(get_db)):
+    return (
+        db.query(models.SerijaTreninga)
+        .filter(models.SerijaTreninga.trening_id == trening_id)
+        .order_by(models.SerijaTreninga.vezba_id, models.SerijaTreninga.redni_broj)
+        .all()
+    )

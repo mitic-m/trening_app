@@ -57,3 +57,25 @@ class VezbaUDanu(Base):
 
     dan: Mapped["DanPlana"] = relationship(back_populates="vezbe")
     vezba: Mapped["Vezba"] = relationship()
+
+class Trening(Base):
+    __tablename__ = "treninzi"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    klijent_id: Mapped[int] = mapped_column(ForeignKey("klijenti.id"))
+    dan_id: Mapped[int] = mapped_column(ForeignKey("dani_plana.id"))
+    datum: Mapped[date] = mapped_column(Date)
+    osecaj_pri_dolasku: Mapped[int]
+    osecaj_tokom: Mapped[int]
+    komentar: Mapped[str | None]
+
+
+class SerijaTreninga(Base):
+    __tablename__ = "serije_treninga"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    trening_id: Mapped[int] = mapped_column(ForeignKey("treninzi.id"))
+    vezba_id: Mapped[int] = mapped_column(ForeignKey("vezbe.id"))
+    redni_broj: Mapped[int]
+    kilaza: Mapped[float]
+    ponavljanja: Mapped[int]
