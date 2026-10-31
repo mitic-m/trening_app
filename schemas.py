@@ -129,3 +129,20 @@ class SerijaDetalj(BaseModel):
 
 class TreningDetalj(TreningOut):
     serije: list[SerijaDetalj]
+
+
+class SerijaKratko(BaseModel):
+    redni_broj: int
+    kilaza: float
+    ponavljanja: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class VezbaSaSerijama(BaseModel):
+    vezba: VezbaOut
+    serije: list[SerijaKratko]
+
+
+class TreningGrupisan(TreningOut):
+    vezbe: list[VezbaSaSerijama]

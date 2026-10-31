@@ -190,9 +190,17 @@ def serije_treninga(trening_id: int, db: Session = Depends(get_db)):
     )
 
 
-@app.get("/treninzi/{trening_id}", response_model=schemas.TreningDetalj)
+@app.get("/treninzi/{trening_id}", response_model=schemas.TreningGrupisan)
 def ceo_trening(trening_id: int, db: Session = Depends(get_db)):
     trening = db.get(models.Trening, trening_id)
     if trening is None:
         raise HTTPException(status_code=404, detail="Trening ne postoji")
-    return trening
+
+    grupe = {}
+    for serija in trening.serije:
+        if serija.vezba_id not in grupe:
+            grupe[serija.vezba_id] = {"vezba": serija.vezba, "serije": []}
+        grupe[serija.vezba_id]["serije"].append(serija)
+
+    osnova = schemas.TreningOut.model_validate(trening).model_dump()
+    return {**osnova, "vezbe": list(grupe.values())}
