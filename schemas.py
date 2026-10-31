@@ -115,3 +115,17 @@ class SerijaOut(SerijaCreate):
     trening_id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SerijaDetalj(BaseModel):
+    id: int
+    redni_broj: int
+    kilaza: float
+    ponavljanja: int
+    vezba: VezbaOut
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TreningDetalj(TreningOut):
+    serije: list[SerijaDetalj]

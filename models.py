@@ -68,6 +68,10 @@ class Trening(Base):
     osecaj_pri_dolasku: Mapped[int]
     osecaj_tokom: Mapped[int]
     komentar: Mapped[str | None]
+    serije: Mapped[list["SerijaTreninga"]] = relationship(
+        back_populates="trening",
+        order_by=lambda: [SerijaTreninga.vezba_id, SerijaTreninga.redni_broj],
+    )
 
 
 class SerijaTreninga(Base):
@@ -79,3 +83,5 @@ class SerijaTreninga(Base):
     redni_broj: Mapped[int]
     kilaza: Mapped[float]
     ponavljanja: Mapped[int]
+    trening: Mapped["Trening"] = relationship(back_populates="serije")
+    vezba: Mapped["Vezba"] = relationship()

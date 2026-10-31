@@ -188,3 +188,11 @@ def serije_treninga(trening_id: int, db: Session = Depends(get_db)):
         .order_by(models.SerijaTreninga.vezba_id, models.SerijaTreninga.redni_broj)
         .all()
     )
+
+
+@app.get("/treninzi/{trening_id}", response_model=schemas.TreningDetalj)
+def ceo_trening(trening_id: int, db: Session = Depends(get_db)):
+    trening = db.get(models.Trening, trening_id)
+    if trening is None:
+        raise HTTPException(status_code=404, detail="Trening ne postoji")
+    return trening
