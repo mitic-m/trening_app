@@ -251,3 +251,62 @@ def plan_pdf(plan_id: int, db: Session = Depends(get_db)):
         media_type="application/pdf",
         headers={"Content-Disposition": 'inline; filename="plan.pdf"'},
     )
+
+
+def primeni_izmene(objekat, podaci):
+    for polje, vrednost in podaci.model_dump(exclude_unset=True).items():
+        setattr(objekat, polje, vrednost)
+
+
+@app.patch("/klijenti/{klijent_id}", response_model=schemas.KlijentOut)
+def izmeni_klijenta(klijent_id: int, podaci: schemas.KlijentUpdate, db: Session = Depends(get_db)):
+    klijent = db.get(models.Klijent, klijent_id)
+    if klijent is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+    primeni_izmene(klijent, podaci)
+    db.commit()
+    db.refresh(klijent)
+    return klijent
+
+
+@app.patch("/planovi/{plan_id}", response_model=schemas.PlanOut)
+def izmeni_plan(plan_id: int, podaci: schemas.PlanUpdate, db: Session = Depends(get_db)):
+    plan = db.get(models.Plan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan ne postoji")
+    primeni_izmene(plan, podaci)
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+@app.patch("/treninzi/{trening_id}", response_model=schemas.TreningOut)
+def izmeni_trening(trening_id: int, podaci: schemas.TreningUpdate, db: Session = Depends(get_db)):
+    trening = db.get(models.Trening, trening_id)
+    if trening is None:
+        raise HTTPException(status_code=404, detail="Trening ne postoji")
+    primeni_izmene(trening, podaci)
+    db.commit()
+    db.refresh(trening)
+    return trening
+
+
+@app.patch("/serije/{serija_id}", response_model=schemas.SerijaOut)
+def izmeni_seriju(serija_id: int, podaci: schemas.SerijaUpdate, db: Session = Depends(get_db)):
+    serija = db.get(models.SerijaTreninga, serija_id)
+    if serija is None:
+        raise HTTPException(status_code=404, detail="Serija ne postoji")
+    primeni_izmene(serija, podaci)
+    db.commit()
+    db.refresh(serija)
+    return serija
+
+
+@app.delete("/serije/{serija_id}")
+def obrisi_seriju(serija_id: int, db: Session = Depends(get_db)):
+    serija = db.get(models.SerijaTreninga, serija_id)
+    if serija is None:
+        raise HTTPException(status_code=404, detail="Serija ne postoji")
+    db.delete(serija)
+    db.commit()
+    return {"poruka": "Serija obrisana"}

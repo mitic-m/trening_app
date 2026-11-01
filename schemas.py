@@ -157,3 +157,26 @@ class IstorijaTreninga(BaseModel):
 class IstorijaVezbe(BaseModel):
     vezba: VezbaOut
     treninzi: list[IstorijaTreninga]
+
+
+class KlijentUpdate(BaseModel):
+    ime: str | None = None
+    prezime: str | None = None
+    datum_rodjenja: date | None = None
+
+
+class PlanUpdate(BaseModel):
+    naziv: str | None = None
+
+
+class TreningUpdate(BaseModel):
+    datum: date | None = None
+    osecaj_pri_dolasku: int | None = Field(default=None, ge=1, le=5)
+    osecaj_tokom: int | None = Field(default=None, ge=1, le=5)
+    komentar: str | None = None
+
+
+class SerijaUpdate(BaseModel):
+    redni_broj: int | None = None
+    kilaza: float | None = None
+    ponavljanja: int | None = None
