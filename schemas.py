@@ -146,3 +146,14 @@ class VezbaSaSerijama(BaseModel):
 
 class TreningGrupisan(TreningOut):
     vezbe: list[VezbaSaSerijama]
+
+
+class IstorijaTreninga(BaseModel):
+    trening_id: int
+    datum: date
+    serije: list[SerijaKratko]
+
+
+class IstorijaVezbe(BaseModel):
+    vezba: VezbaOut
+    treninzi: list[IstorijaTreninga]

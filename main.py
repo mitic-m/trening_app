@@ -204,3 +204,32 @@ def ceo_trening(trening_id: int, db: Session = Depends(get_db)):
 
     osnova = schemas.TreningOut.model_validate(trening).model_dump()
     return {**osnova, "vezbe": list(grupe.values())}
+
+
+@app.get("/klijenti/{klijent_id}/istorija/{vezba_id}", response_model=schemas.IstorijaVezbe)
+def istorija_vezbe(klijent_id: int, vezba_id: int, limit: int = 5, db: Session = Depends(get_db)):
+    if db.get(models.Klijent, klijent_id) is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+    vezba = db.get(models.Vezba, vezba_id)
+    if vezba is None:
+        raise HTTPException(status_code=404, detail="Vežba ne postoji")
+
+    treninzi = (
+        db.query(models.Trening)
+        .join(models.SerijaTreninga)
+        .filter(
+            models.Trening.klijent_id == klijent_id,
+            models.SerijaTreninga.vezba_id == vezba_id,
+        )
+        .distinct()
+        .order_by(models.Trening.datum.desc())
+        .limit(limit)
+        .all()
+    )
+
+    istorija = []
+    for trening in treninzi:
+        serije = [s for s in trening.serije if s.vezba_id == vezba_id]
+        istorija.append({"trening_id": trening.id, "datum": trening.datum, "serije": serije})
+
+    return {"vezba": vezba, "treninzi": istorija}
