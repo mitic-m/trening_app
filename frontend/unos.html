@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Unos treninga</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 0 12px; }
+    label { display: block; margin: 12px 0 4px; font-weight: bold; }
+    select, input, textarea { width: 100%; padding: 8px; font-size: 16px; box-sizing: border-box; }
+    .vezba { border: 1px solid #ccc; border-radius: 8px; padding: 12px; margin: 16px 0; }
+    .vezba h3 { margin: 0 0 4px; }
+    .prosli { color: #555; font-size: 14px; margin: 4px 0 8px; }
+    .red { display: flex; gap: 8px; margin-top: 8px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    #sacuvaj { width: 100%; margin-top: 16px; background: #1a56db; color: white; border: none; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <p><a href="/app/">&larr; Nazad</a></p>
+  <h1>Unos treninga</h1>
+
+  <label for="klijent">Klijent</label>
+  <select id="klijent" onchange="ucitajPlanove()"></select>
+
+  <label for="plan">Plan</label>
+  <select id="plan" onchange="ucitajPlan()"></select>
+
+  <label for="dan">Dan</label>
+  <select id="dan" onchange="prikaziVezbe()"></select>
+
+  <label for="datum">Datum</label>
+  <input type="date" id="datum">
+
+  <label for="pri-dolasku">Kako je došao na trening (1 do 5)</label>
+  <input type="number" id="pri-dolasku" min="1" max="5">
+
+  <div id="vezbe"></div>
+
+  <label for="tokom">Kako se osećao tokom treninga (1 do 5)</label>
+  <input type="number" id="tokom" min="1" max="5">
+
+  <label for="komentar">Komentar (nije obavezan)</label>
+  <textarea id="komentar" rows="3"></textarea>
+
+  <button id="sacuvaj" onclick="sacuvaj()">Sačuvaj trening</button>
+  <p id="poruka"></p>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let plan = null;   // ceo izabrani plan (dani, vežbe)
+    let serije = {};   // vezba_id -> lista serija koje smo upisali
+
+    async function dohvati(url) {
+      const odgovor = await fetch(url);
+      return odgovor.json();
+    }
+
+    function popuni(idSelekta, lista, tekst) {
+      const sel = $(idSelekta);
+      sel.innerHTML = "";
+      for (const stavka of lista) {
+        const opcija = document.createElement("option");
+        opcija.value = stavka.id;
+        opcija.textContent = tekst(stavka);
+        sel.appendChild(opcija);
+      }
+    }
+
+    async function ucitajKlijente() {
+      const klijenti = await dohvati("/klijenti");
+      popuni("klijent", klijenti, (k) => `${k.ime} ${k.prezime}`);
+      await ucitajPlanove();
+    }
+
+    async function ucitajPlanove() {
+      const klijentId = $("klijent").value;
+      const planovi = klijentId ? await dohvati(`/klijenti/${klijentId}/planovi`) : [];
+      popuni("plan", planovi, (p) => p.naziv);
+      await ucitajPlan();
+    }
+
+    async function ucitajPlan() {
+      const planId = $("plan").value;
+      plan = planId ? await dohvati(`/planovi/${planId}`) : null;
+      popuni("dan", plan ? plan.dani : [], (d) => d.naziv);
+      await prikaziVezbe();
+    }
+
+    async function prikaziVezbe() {
+      serije = {};
+      const kontejner = $("vezbe");
+      kontejner.innerHTML = "";
+      if (!plan) return;
+      const dan = plan.dani.find((d) => d.id == $("dan").value);
+      if (!dan) return;
+
+      for (const stavka of dan.vezbe) {
+        const vezba = stavka.vezba;
+        serije[vezba.id] = [];
+
+        const kutija = document.createElement("div");
+        kutija.className = "vezba";
+        kutija.innerHTML = `
+          <h3>${vezba.naziv}</h3>
+          <div>Plan: ${stavka.serije} x ${stavka.ponavljanja}</div>
+          <div class="prosli" id="prosli-${vezba.id}"></div>
+          <div id="lista-${vezba.id}"></div>
+          <div class="red">
+            <input type="number" step="any" placeholder="kg" id="kg-${vezba.id}">
+            <input type="number" placeholder="ponavljanja" id="pon-${vezba.id}">
+          </div>
+          <div class="red">
+            <button onclick="dodajSeriju(${vezba.id})">Dodaj seriju</button>
+            <button onclick="ukloniSeriju(${vezba.id})">Ukloni poslednju</button>
+          </div>`;
+        kontejner.appendChild(kutija);
+
+        ucitajProsli(vezba.id);
+      }
+    }
+
+    async function ucitajProsli(vezbaId) {
+      const klijentId = $("klijent").value;
+      const istorija = await dohvati(`/klijenti/${klijentId}/istorija/${vezbaId}?limit=1`);
+      const polje = $(`prosli-${vezbaId}`);
+      if (istorija.treninzi.length === 0) {
+        polje.textContent = "Prošli put: nema podataka";
+        return;
+      }
+      const t = istorija.treninzi[0];
+      const tekst = t.serije.map((s) => `${s.kilaza} kg x ${s.ponavljanja}`).join(", ");
+      polje.textContent = `Prošli put (${t.datum}): ${tekst}`;
+    }
+
+    function osveziListu(vezbaId) {
+      const lista = $(`lista-${vezbaId}`);
+      lista.innerHTML = "";
+      serije[vezbaId].forEach((s, i) => {
+        const red = document.createElement("div");
+        red.textContent = `Serija ${i + 1}: ${s.kilaza} kg x ${s.ponavljanja}`;
+        lista.appendChild(red);
+      });
+    }
+
+    function dodajSeriju(vezbaId) {
+      const kg = parseFloat($(`kg-${vezbaId}`).value);
+      const pon = parseInt($(`pon-${vezbaId}`).value);
+      if (isNaN(kg) || isNaN(pon)) return;
+      serije[vezbaId].push({ kilaza: kg, ponavljanja: pon });
+      osveziListu(vezbaId);
+      $(`pon-${vezbaId}`).value = "";
+    }
+
+    function ukloniSeriju(vezbaId) {
+      serije[vezbaId].pop();
+      osveziListu(vezbaId);
+    }
+
+    async function posalji(url, podaci) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(podaci),
+      });
+    }
+
+    async function sacuvaj() {
+      const poruka = $("poruka");
+      if (!$("dan").value || !$("pri-dolasku").value || !$("tokom").value) {
+        poruka.textContent = "Izaberi dan i upiši oba osećaja (1 do 5).";
+        return;
+      }
+
+      const odgovor = await posalji("/treninzi", {
+        klijent_id: Number($("klijent").value),
+        dan_id: Number($("dan").value),
+        datum: $("datum").value,
+        osecaj_pri_dolasku: Number($("pri-dolasku").value),
+        osecaj_tokom: Number($("tokom").value),
+        komentar: $("komentar").value || null,
+      });
+      if (!odgovor.ok) {
+        poruka.textContent = "Greška pri čuvanju treninga: " + (await odgovor.text());
+        return;
+      }
+      const trening = await odgovor.json();
+
+      for (const [vezbaId, lista] of Object.entries(serije)) {
+        for (let i = 0; i < lista.length; i++) {
+          const r = await posalji(`/treninzi/${trening.id}/serije`, {
+            vezba_id: Number(vezbaId),
+            redni_broj: i + 1,
+            kilaza: lista[i].kilaza,
+            ponavljanja: lista[i].ponavljanja,
+          });
+          if (!r.ok) {
+            poruka.textContent = "Greška pri čuvanju serije: " + (await r.text());
+            return;
+          }
+        }
+      }
+
+      poruka.textContent = `Trening sačuvan (broj ${trening.id}).`;
+      $("pri-dolasku").value = "";
+      $("tokom").value = "";
+      $("komentar").value = "";
+      await prikaziVezbe();
+    }
+
+    $("datum").value = new Date().toISOString().slice(0, 10);
+    ucitajKlijente();
+  </script>
+</body>
+</html>
