@@ -5,6 +5,10 @@ from database import Base, engine, SessionLocal
 import models
 import schemas
 
+from fastapi.responses import Response
+
+from pdf_izvestaj import napravi_pdf
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -233,3 +237,17 @@ def istorija_vezbe(klijent_id: int, vezba_id: int, limit: int = 5, db: Session =
         istorija.append({"trening_id": trening.id, "datum": trening.datum, "serije": serije})
 
     return {"vezba": vezba, "treninzi": istorija}
+
+
+@app.get("/planovi/{plan_id}/pdf")
+def plan_pdf(plan_id: int, db: Session = Depends(get_db)):
+    plan = db.get(models.Plan, plan_id)
+    if plan is None:
+        raise HTTPException(status_code=404, detail="Plan ne postoji")
+    klijent = db.get(models.Klijent, plan.klijent_id)
+    sadrzaj = napravi_pdf(plan, klijent)
+    return Response(
+        content=sadrzaj,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="plan.pdf"'},
+    )
