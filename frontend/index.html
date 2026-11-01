@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trening aplikacija</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 0 12px; }
+    li { margin: 8px 0; }
+    .klijent { cursor: pointer; color: #1a56db; }
+    .klijent:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Klijenti</h1>
+  <ul id="klijenti"></ul>
+
+  <h2 id="naslov-planova"></h2>
+  <ul id="planovi"></ul>
+
+  <script>
+    async function ucitajKlijente() {
+      const odgovor = await fetch("/klijenti");
+      const klijenti = await odgovor.json();
+
+      const lista = document.getElementById("klijenti");
+      lista.innerHTML = "";
+      for (const k of klijenti) {
+        const li = document.createElement("li");
+        li.textContent = `${k.ime} ${k.prezime}`;
+        li.className = "klijent";
+        li.onclick = () => prikaziPlanove(k);
+        lista.appendChild(li);
+      }
+    }
+
+    async function prikaziPlanove(klijent) {
+      const odgovor = await fetch(`/klijenti/${klijent.id}/planovi`);
+      const planovi = await odgovor.json();
+
+      document.getElementById("naslov-planova").textContent =
+        `Planovi: ${klijent.ime} ${klijent.prezime}`;
+
+      const lista = document.getElementById("planovi");
+      lista.innerHTML = "";
+      for (const p of planovi) {
+        const li = document.createElement("li");
+        li.textContent = p.naziv + " ";
+
+        const link = document.createElement("a");
+        link.href = `/planovi/${p.id}/pdf`;
+        link.target = "_blank";
+        link.textContent = "(PDF)";
+        li.appendChild(link);
+
+        lista.appendChild(li);
+      }
+    }
+
+    ucitajKlijente();
+  </script>
+</body>
+</html>

@@ -8,6 +8,7 @@ import schemas
 from fastapi.responses import Response
 
 from pdf_izvestaj import napravi_pdf
+from fastapi.staticfiles import StaticFiles
 
 Base.metadata.create_all(bind=engine)
 
@@ -310,3 +311,5 @@ def obrisi_seriju(serija_id: int, db: Session = Depends(get_db)):
     db.delete(serija)
     db.commit()
     return {"poruka": "Serija obrisana"}
+
+app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
