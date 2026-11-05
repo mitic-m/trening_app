@@ -167,7 +167,7 @@ def treninzi_klijenta(klijent_id: int, db: Session = Depends(get_db)):
     return (
         db.query(models.Trening)
         .filter(models.Trening.klijent_id == klijent_id)
-        .order_by(models.Trening.datum.desc())
+        .order_by(models.Trening.datum.desc(), models.Trening.id.desc())
         .all()
     )
 
@@ -227,7 +227,7 @@ def istorija_vezbe(klijent_id: int, vezba_id: int, limit: int = 5, db: Session =
             models.SerijaTreninga.vezba_id == vezba_id,
         )
         .distinct()
-        .order_by(models.Trening.datum.desc())
+        .order_by(models.Trening.datum.desc(), models.Trening.id.desc())
         .limit(limit)
         .all()
     )
