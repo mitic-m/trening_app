@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Istorija treninga</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 0 12px; }
+    label { display: block; margin: 12px 0 4px; font-weight: bold; }
+    select { width: 100%; padding: 8px; font-size: 16px; box-sizing: border-box; }
+    .trening { border: 1px solid #ccc; border-radius: 8px; margin: 12px 0; }
+    .naslov { padding: 12px; cursor: pointer; background: #f3f4f6; border-radius: 8px; }
+    .naslov:hover { background: #e5e7eb; }
+    .detalji { padding: 12px; }
+    .detalji div { margin: 2px 0 10px; }
+  </style>
+</head>
+<body>
+  <p><a href="/app/">&larr; Nazad</a></p>
+  <h1>Istorija treninga</h1>
+
+  <label for="klijent">Klijent</label>
+  <select id="klijent" onchange="ucitajTreninge()"></select>
+
+  <div id="treninzi"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    async function dohvati(url) {
+      const odgovor = await fetch(url);
+      return odgovor.json();
+    }
+
+    async function ucitajKlijente() {
+      const klijenti = await dohvati("/klijenti");
+      const sel = $("klijent");
+      sel.innerHTML = "";
+      for (const k of klijenti) {
+        const opcija = document.createElement("option");
+        opcija.value = k.id;
+        opcija.textContent = `${k.ime} ${k.prezime}`;
+        sel.appendChild(opcija);
+      }
+      await ucitajTreninge();
+    }
+
+    async function ucitajTreninge() {
+      const kontejner = $("treninzi");
+      kontejner.innerHTML = "";
+      const klijentId = $("klijent").value;
+      if (!klijentId) return;
+
+      const treninzi = await dohvati(`/klijenti/${klijentId}/treninzi`);
+      if (treninzi.length === 0) {
+        kontejner.textContent = "Nema upisanih treninga.";
+        return;
+      }
+
+      for (const t of treninzi) {
+        const kutija = document.createElement("div");
+        kutija.className = "trening";
+
+        const naslov = document.createElement("div");
+        naslov.className = "naslov";
+        naslov.textContent =
+          `${t.datum}  |  dolazak: ${t.osecaj_pri_dolasku}/5, tokom: ${t.osecaj_tokom}/5`;
+
+        const detalji = document.createElement("div");
+        detalji.className = "detalji";
+        detalji.hidden = true;
+
+        naslov.onclick = () => otvori(t.id, detalji);
+
+        kutija.append(naslov, detalji);
+        kontejner.appendChild(kutija);
+      }
+    }
+
+    async function otvori(treningId, detalji) {
+      if (detalji.dataset.ucitano) {
+        detalji.hidden = !detalji.hidden;
+        return;
+      }
+
+      const t = await dohvati(`/treninzi/${treningId}`);
+      detalji.innerHTML = "";
+
+      for (const stavka of t.vezbe) {
+        const ime = document.createElement("strong");
+        ime.textContent = stavka.vezba.naziv;
+
+        const serije = document.createElement("div");
+        serije.textContent = stavka.serije
+          .map((s) => `${s.kilaza} kg x ${s.ponavljanja}`)
+          .join(", ");
+
+        detalji.append(ime, serije);
+      }
+
+      if (t.komentar) {
+        const komentar = document.createElement("em");
+        komentar.textContent = `Komentar: ${t.komentar}`;
+        detalji.appendChild(komentar);
+      }
+
+      detalji.dataset.ucitano = "1";
+      detalji.hidden = false;
+    }
+
+    ucitajKlijente();
+  </script>
+</body>
+</html>
