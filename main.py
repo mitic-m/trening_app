@@ -313,3 +313,37 @@ def obrisi_seriju(serija_id: int, db: Session = Depends(get_db)):
     return {"poruka": "Serija obrisana"}
 
 app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
+
+
+@app.post("/planovi/{plan_id}/kopiraj", response_model=schemas.PlanOut)
+def kopiraj_plan(plan_id: int, podaci: schemas.PlanKopija, db: Session = Depends(get_db)):
+    original = db.get(models.Plan, plan_id)
+    if original is None:
+        raise HTTPException(status_code=404, detail="Plan ne postoji")
+    if db.get(models.Klijent, podaci.klijent_id) is None:
+        raise HTTPException(status_code=404, detail="Klijent ne postoji")
+
+    novi = models.Plan(
+        naziv=podaci.naziv or original.naziv,
+        klijent_id=podaci.klijent_id,
+    )
+    db.add(novi)
+    db.flush()
+
+    for dan in original.dani:
+        novi_dan = models.DanPlana(
+            plan_id=novi.id, naziv=dan.naziv, redni_broj=dan.redni_broj
+        )
+        db.add(novi_dan)
+        db.flush()
+        for stavka in dan.vezbe:
+            db.add(models.VezbaUDanu(
+                dan_id=novi_dan.id,
+                vezba_id=stavka.vezba_id,
+                serije=stavka.serije,
+                ponavljanja=stavka.ponavljanja,
+            ))
+
+    db.commit()
+    db.refresh(novi)
+    return novi

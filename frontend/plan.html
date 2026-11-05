@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Planovi</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 0 12px; }
+    h2 { margin-top: 28px; border-top: 1px solid #ccc; padding-top: 16px; }
+    label { display: block; margin: 12px 0 4px; font-weight: bold; }
+    select, input { width: 100%; padding: 8px; font-size: 16px; box-sizing: border-box; }
+    .red { display: flex; gap: 8px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; margin-top: 8px; }
+    #poruka { color: #b91c1c; }
+    #prikaz { background: #f3f4f6; border-radius: 8px; padding: 12px; }
+    #prikaz ul { margin: 4px 0 12px; }
+  </style>
+</head>
+<body>
+  <p><a href="/app/">&larr; Nazad</a></p>
+  <h1>Planovi</h1>
+  <p id="poruka"></p>
+
+  <h2>Novi klijent</h2>
+  <div class="red">
+    <input id="ime" placeholder="Ime">
+    <input id="prezime" placeholder="Prezime">
+  </div>
+  <label for="rodjenje">Datum rođenja</label>
+  <input type="date" id="rodjenje">
+  <button onclick="noviKlijent()">Dodaj klijenta</button>
+
+  <h2>Plan</h2>
+  <label for="klijent">Klijent</label>
+  <select id="klijent" onchange="ucitajPlanove()"></select>
+
+  <label for="plan">Plan</label>
+  <select id="plan" onchange="prikaziPlan()"></select>
+
+  <label for="plan-naziv">Novi plan za ovog klijenta</label>
+  <input id="plan-naziv" placeholder="Naziv plana">
+  <button onclick="noviPlan()">Napravi plan</button>
+
+    <h2>Kopiraj izabrani plan</h2>
+  <label for="klijent-cilj">Kopiraj za klijenta</label>
+  <select id="klijent-cilj"></select>
+  <input id="kopija-naziv" placeholder="Naziv kopije (nije obavezno)">
+  <button onclick="kopirajPlan()">Kopiraj plan</button>
+
+  <h2>Dani</h2>
+  <input id="dan-naziv" placeholder="Naziv dana (npr. Dan A, čučanj)">
+  <button onclick="noviDan()">Dodaj dan u plan</button>
+
+  <h2>Vežbe u danu</h2>
+  <label for="dan">Dan</label>
+  <select id="dan"></select>
+
+  <label for="vezba">Vežba</label>
+  <select id="vezba"></select>
+
+  <div class="red">
+    <input type="number" id="serije" placeholder="Serije">
+    <input type="number" id="ponavljanja" placeholder="Ponavljanja">
+  </div>
+  <button onclick="dodajVezbuUDan()">Dodaj vežbu u dan</button>
+
+  <h2>Nova vežba u katalogu</h2>
+  <div class="red">
+    <input id="vezba-naziv" placeholder="Naziv vežbe">
+    <input id="vezba-grupa" placeholder="Mišićna grupa (nije obavezno)">
+  </div>
+  <button onclick="novaVezba()">Dodaj u katalog</button>
+
+  <h2>Plan trenutno</h2>
+  <div id="prikaz"></div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    let plan = null;   // ceo izabrani plan (dani, vežbe)
+
+    async function dohvati(url) {
+      const odgovor = await fetch(url);
+      return odgovor.json();
+    }
+
+    async function posalji(url, podaci) {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(podaci),
+      });
+    }
+
+    // Vraća true ako je zahtev uspeo, a ako nije, ispisuje grešku na vrhu stranice.
+    async function proveri(odgovor) {
+      if (!odgovor.ok) {
+        $("poruka").textContent = "Greška: " + (await odgovor.text());
+        return false;
+      }
+      $("poruka").textContent = "";
+      return true;
+    }
+
+    function popuni(idSelekta, lista, tekst, izabran) {
+      const sel = $(idSelekta);
+      sel.innerHTML = "";
+      for (const stavka of lista) {
+        const opcija = document.createElement("option");
+        opcija.value = stavka.id;
+        opcija.textContent = tekst(stavka);
+        sel.appendChild(opcija);
+      }
+      if (izabran != null) sel.value = izabran;
+    }
+
+    async function ucitajKlijente(izabran) {
+      const klijenti = await dohvati("/klijenti");
+      popuni("klijent", klijenti, (k) => `${k.ime} ${k.prezime}`, izabran);
+      popuni("klijent-cilj", klijenti, (k) => `${k.ime} ${k.prezime}`);
+      await ucitajPlanove();
+    }
+
+    async function ucitajPlanove(izabran) {
+      const klijentId = $("klijent").value;
+      const planovi = klijentId ? await dohvati(`/klijenti/${klijentId}/planovi`) : [];
+      popuni("plan", planovi, (p) => p.naziv, izabran);
+      await prikaziPlan();
+    }
+
+    async function prikaziPlan(izabranDan) {
+      const planId = $("plan").value;
+      plan = planId ? await dohvati(`/planovi/${planId}`) : null;
+      popuni("dan", plan ? plan.dani : [], (d) => d.naziv, izabranDan);
+
+      const prikaz = $("prikaz");
+      prikaz.innerHTML = "";
+      if (!plan) {
+        prikaz.textContent = "Nema izabranog plana.";
+        return;
+      }
+
+      const naslov = document.createElement("h3");
+      naslov.textContent = plan.naziv;
+      prikaz.appendChild(naslov);
+
+      for (const dan of plan.dani) {
+        const ime = document.createElement("strong");
+        ime.textContent = dan.naziv;
+        const lista = document.createElement("ul");
+        for (const stavka of dan.vezbe) {
+          const li = document.createElement("li");
+          li.textContent = `${stavka.vezba.naziv}: ${stavka.serije} x ${stavka.ponavljanja}`;
+          lista.appendChild(li);
+        }
+        prikaz.append(ime, lista);
+      }
+    }
+
+    async function ucitajVezbe(izabrana) {
+      const vezbe = await dohvati("/vezbe");
+      popuni("vezba", vezbe, (v) => v.naziv, izabrana);
+    }
+
+    async function noviKlijent() {
+      const odgovor = await posalji("/klijenti", {
+        ime: $("ime").value.trim(),
+        prezime: $("prezime").value.trim(),
+        datum_rodjenja: $("rodjenje").value,
+      });
+      if (!(await proveri(odgovor))) return;
+      const klijent = await odgovor.json();
+      $("ime").value = "";
+      $("prezime").value = "";
+      $("rodjenje").value = "";
+      await ucitajKlijente(klijent.id);
+    }
+
+    async function noviPlan() {
+      const naziv = $("plan-naziv").value.trim();
+      if (!$("klijent").value || !naziv) {
+        $("poruka").textContent = "Izaberi klijenta i upiši naziv plana.";
+        return;
+      }
+      const odgovor = await posalji("/planovi", {
+        naziv: naziv,
+        klijent_id: Number($("klijent").value),
+      });
+      if (!(await proveri(odgovor))) return;
+      const novi = await odgovor.json();
+      $("plan-naziv").value = "";
+      await ucitajPlanove(novi.id);
+    }
+
+    async function noviDan() {
+      const naziv = $("dan-naziv").value.trim();
+      if (!plan || !naziv) {
+        $("poruka").textContent = "Izaberi plan i upiši naziv dana.";
+        return;
+      }
+      const odgovor = await posalji(`/planovi/${plan.id}/dani`, {
+        naziv: naziv,
+        redni_broj: plan.dani.length + 1,
+      });
+      if (!(await proveri(odgovor))) return;
+      const dan = await odgovor.json();
+      $("dan-naziv").value = "";
+      await prikaziPlan(dan.id);
+    }
+
+    async function kopirajPlan() {
+      if (!plan || !$("klijent-cilj").value) {
+        $("poruka").textContent = "Izaberi plan i klijenta za koga se kopira.";
+        return;
+      }
+      const naziv = $("kopija-naziv").value.trim();
+      const odgovor = await posalji(`/planovi/${plan.id}/kopiraj`, {
+        klijent_id: Number($("klijent-cilj").value),
+        naziv: naziv || null,
+      });
+      if (!(await proveri(odgovor))) return;
+      const novi = await odgovor.json();
+      $("kopija-naziv").value = "";
+      $("klijent").value = $("klijent-cilj").value;
+      await ucitajPlanove(novi.id);
+    }
+
+    async function dodajVezbuUDan() {
+      const danId = $("dan").value;
+      const vezbaId = $("vezba").value;
+      const serije = parseInt($("serije").value);
+      const ponavljanja = parseInt($("ponavljanja").value);
+      if (!danId || !vezbaId || isNaN(serije) || isNaN(ponavljanja)) {
+        $("poruka").textContent = "Izaberi dan i vežbu, pa upiši serije i ponavljanja.";
+        return;
+      }
+      const odgovor = await posalji(`/dani/${danId}/vezbe`, {
+        vezba_id: Number(vezbaId),
+        serije: serije,
+        ponavljanja: ponavljanja,
+      });
+      if (!(await proveri(odgovor))) return;
+      await prikaziPlan(danId);
+    }
+
+    async function novaVezba() {
+      const naziv = $("vezba-naziv").value.trim();
+      if (!naziv) {
+        $("poruka").textContent = "Upiši naziv vežbe.";
+        return;
+      }
+      const odgovor = await posalji("/vezbe", {
+        naziv: naziv,
+        misicna_grupa: $("vezba-grupa").value.trim() || null,
+      });
+      if (!(await proveri(odgovor))) return;
+      const vezba = await odgovor.json();
+      $("vezba-naziv").value = "";
+      $("vezba-grupa").value = "";
+      await ucitajVezbe(vezba.id);
+    }
+
+    ucitajKlijente();
+    ucitajVezbe();
+  </script>
+</body>
+</html>

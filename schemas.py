@@ -180,3 +180,8 @@ class SerijaUpdate(BaseModel):
     redni_broj: int | None = None
     kilaza: float | None = None
     ponavljanja: int | None = None
+
+
+class PlanKopija(BaseModel):
+    klijent_id: int
+    naziv: str | None = None
