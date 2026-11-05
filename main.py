@@ -1,14 +1,12 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import Response
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from database import Base, engine, SessionLocal
+from pdf_izvestaj import napravi_pdf
 import models
 import schemas
-
-from fastapi.responses import Response
-
-from pdf_izvestaj import napravi_pdf
-from fastapi.staticfiles import StaticFiles
 
 Base.metadata.create_all(bind=engine)
 
@@ -312,8 +310,6 @@ def obrisi_seriju(serija_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"poruka": "Serija obrisana"}
 
-app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
-
 
 @app.post("/planovi/{plan_id}/kopiraj", response_model=schemas.PlanOut)
 def kopiraj_plan(plan_id: int, podaci: schemas.PlanKopija, db: Session = Depends(get_db)):
@@ -347,3 +343,5 @@ def kopiraj_plan(plan_id: int, podaci: schemas.PlanKopija, db: Session = Depends
     db.commit()
     db.refresh(novi)
     return novi
+
+app.mount("/app", StaticFiles(directory="frontend", html=True), name="frontend")
